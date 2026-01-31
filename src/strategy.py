@@ -39,12 +39,12 @@ class Strategy:
 
             # Optional templates
             if march:
-                templates.append("combat/march.png")
+                templates.append("combat/advance.png")
 
             if night_battle:
-                templates.append("combat/night_battle.png")
+                templates.append("combat/engage_night_battle.png")
             else:
-                templates.append("combat/do_not_pursue.png")
+                templates.append("combat/skip_night_battle.png")
 
             # Main loop: keep searching and clicking templates
             while self.running:
