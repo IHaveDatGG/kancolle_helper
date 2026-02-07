@@ -17,11 +17,13 @@ class Strategy:
     def run(self, march: bool = False, night_battle: bool = False):
         """Start the strategy by creating an async task"""
         self.running = True
+        self.capture.start()
         self.task = asyncio.create_task(self._run(march=march, night_battle=night_battle))
 
     def stop(self):
         """Stop the strategy and cancel the async task"""
         self.running = False
+        self.capture.stop()
         if self.task and not self.task.done():
             self.task.cancel()
             self.task = None
@@ -56,7 +58,8 @@ class Strategy:
 
     def _click_first_template_path(self, template_paths: list[str]):
         """Try to locate the first matching template and perform a mouse click"""
-        image = self.capture.snapshot()
-        pos = locate(image, template_paths)
-        if pos is not None:
-            self.mouse.click(pos)
+        image = self.capture.get_frame()
+        if image is not None:
+            pos = locate(image, template_paths)
+            if pos is not None:
+                self.mouse.click(pos)

@@ -1,58 +1,51 @@
 import threading
-from numpy import ndarray
 from windows_capture import Frame, InternalCaptureControl, WindowsCapture
 
-class WindowCapture:
-    """
-    A wrapper for WindowsCapture to capture a single frame from a specified window.
+import config
 
-    Attributes
-    ----------
-    _capture : WindowsCapture
-        The internal WindowsCapture instance.
-    _last_frame : ndarray
-        The most recently captured frame buffer.
-    _frame_ready_event : threading.Event
-        Event indicating that a frame has arrived.
-    """
+
+WAIT_FRAME_TIMEOUT = 2
+
+
+class WindowCapture:
+    """A wrapper for WindowsCapture to capture a single frame from a specified window."""
 
     def __init__(self, window_name: str):
-        """
-        Initialize the WindowCapture for a specific window.
-
-        Parameters
-        ----------
-        window_name : str
-            The title of the window to capture.
-        """
-        self._capture = WindowsCapture(window_name=window_name)
+        """Initialize the WindowCapture for a specific window."""
+        self._capture = WindowsCapture(cursor_capture=False, window_name=window_name)
         self._capture.frame_handler = self._on_frame_arrived
         self._capture.closed_handler = lambda: None
-        self._last_frame = None
+        self._running = False
         self._frame_ready_event = threading.Event()
+        self.latest_frame = None
 
     def _on_frame_arrived(self, frame: Frame, capture_control: InternalCaptureControl):
         """
         Callback invoked when a new frame is received.
-        Updates the last frame and stops capture.
+        Updates the latest frame and stops capture if not running.
         """
-        self._last_frame = frame.frame_buffer
+        self.latest_frame = frame.frame_buffer
         self._frame_ready_event.set()
-        capture_control.stop()
+        if config.settings.capture_mode == config.CaptureMode.SINGLE or not self._running:
+            capture_control.stop()
 
-    def snapshot(self, timeout: float = 2) -> ndarray:
-        """
-        Capture a single frame from the window.
+    def start(self):
+        """Start capturing frames."""
+        if config.settings.capture_mode == config.CaptureMode.CONTINUOUS and not self._running:
+            self._running = True
+            self._capture.start_free_threaded()
 
-        Raises
-        ------
-        TimeoutError
-            If no frame is received within the timeout period.
-        """
-        self._capture.start()
+    def stop(self):
+        """Stop capturing frames."""
+        self._running = False
 
-        if self._frame_ready_event.wait(timeout):
-            self._frame_ready_event.clear()
-            return self._last_frame
+    def get_frame(self):
+        """Retrieve the most recently captured frame."""
+        if config.settings.capture_mode == config.CaptureMode.SINGLE:
+            self._capture.start_free_threaded()
+            if self._frame_ready_event.wait(WAIT_FRAME_TIMEOUT):
+                return self.latest_frame
+            else:
+                raise TimeoutError("No frame received within timeout")
         else:
-            raise TimeoutError("No frame received within timeout")
+            return self.latest_frame
