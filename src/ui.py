@@ -1,6 +1,8 @@
 import asyncio
 import flet as ft
 
+import config
+
 # Window configuration
 WINDOW_WIDTH = 400
 WINDOW_HEIGHT = 500
@@ -34,6 +36,20 @@ class UI:
         self.running: bool = False
         self.run_strategy = None
         self.stop_strategy = None
+
+        # Toolbar
+        self.capture_mode_button = ft.IconButton(
+            icon=ft.icons.Icons.PHOTO_CAMERA_BACK,
+            icon_color="yellow",
+            tooltip=config.CaptureMode.SINGLE.value,
+            on_click=self._toggle_capture_mode
+        )
+        self.toolbar = ft.Row(
+            controls=[
+                self.capture_mode_button
+            ],
+            alignment=ft.MainAxisAlignment.END
+        )
 
         # Status display
         self.status = ft.Text("Current status: Waiting", size=TITLE_FONT_SIZE)
@@ -92,14 +108,35 @@ class UI:
     def _main(self, page: ft.Page) -> None:
         """Configure the main page and add UI components."""
         self.page = page
-        page.title = "Kancolle Helper"
+        page.title = "Kancolle Helper v0.1.3"
         page.vertical_alignment = ft.MainAxisAlignment.CENTER
         page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         page.window.width = WINDOW_WIDTH
         page.window.height = WINDOW_HEIGHT
         page.window.resizable = False
         page.on_close = self._stop_strategy
-        page.add(self.container)
+        page.add(
+            ft.Stack([
+                self.container,
+                self.toolbar,
+            ], expand=True)
+        )
+
+    def _toggle_capture_mode(self) -> None:
+        """Toggle the current capture mode between SINGLE and CONTINUOUS."""
+        if self.running:
+            return
+
+        config.settings.toggle_capture_mode()
+
+        if config.settings.capture_mode == config.CaptureMode.SINGLE:
+            self.capture_mode_button.icon = ft.icons.Icons.PHOTO_CAMERA_BACK
+            self.capture_mode_button.icon_color = "yellow"
+        else:
+            self.capture_mode_button.icon = ft.icons.Icons.VIDEO_CAMERA_BACK
+            self.capture_mode_button.icon_color = "red"
+
+        self.capture_mode_button.tooltip = config.settings.capture_mode.value
 
     async def _toggle_strategy_execution(self) -> None:
         """Toggle between starting and stopping the strategy."""
