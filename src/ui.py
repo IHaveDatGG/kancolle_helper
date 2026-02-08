@@ -10,6 +10,7 @@ WINDOW_HEIGHT = 500
 # Font sizes
 TITLE_FONT_SIZE = 24
 SUBTITLE_FONT_SIZE = 18
+BODY_FONT_SIZE = 14
 
 # UI element sizes
 BUTTON_WIDTH = 200
@@ -77,8 +78,8 @@ class UI:
         )
 
         # Options
-        self.march_option =  ft.Switch(label="March")
-        self.night_battle_option = ft.Switch(label="Night battle")
+        self.advance_option = self._tristate_segmented_button("進擊", "撤退", "advance")
+        self.night_battle_option = self._tristate_segmented_button("夜戦突入", "追擊せず", "night_battle")
 
         # Main container layout
         self.container = ft.Container(
@@ -92,7 +93,8 @@ class UI:
                     self.status,
                     self.input_row,
                     self.main_button,
-                    self.march_option,
+                    ft.Divider(height=5, color="transparent"),
+                    self.advance_option,
                     self.night_battle_option,
                 ],
             ),
@@ -182,3 +184,35 @@ class UI:
         self.page.update()
         if self.stop_strategy:
             self.stop_strategy()
+
+    def _tristate_segmented_button(self, enable_text: str, disable_text: str, attr: str) -> ft.SegmentedButton:
+        """
+        Create a tri-state segmented button with UNSET, ENABLED, and DISABLED options.
+        The selected value will update the given attribute in config.settings.
+        """
+        segmented_button = ft.SegmentedButton(
+            selected=[config.TriState.UNSET],
+            show_selected_icon=False,
+            segments=[],
+            on_change=lambda e: setattr(
+                config.settings, attr, config.TriState(e.data[0])
+            )
+        )
+
+        def _create_segment(value, text):
+            """Create a segment with either an icon (if text is None) or a label."""
+            if text is None:
+                return ft.Segment(value=value, icon=ft.Icons.CANCEL)
+            return ft.Segment(value=value, label=ft.Text(value=text, size=BODY_FONT_SIZE))
+
+        # Define tri-state options
+        options = [
+            (config.TriState.UNSET, None),
+            (config.TriState.ENABLED, enable_text),
+            (config.TriState.DISABLED, disable_text),
+        ]
+
+        # Build segments
+        segmented_button.segments = [_create_segment(value, text) for value, text in options]
+
+        return segmented_button
