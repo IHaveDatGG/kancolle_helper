@@ -1,5 +1,6 @@
 import asyncio
 from background_mouse import BackgroundMouse
+import config
 from template_locator import locate
 from window_capture import WindowCapture
 
@@ -14,11 +15,11 @@ class Strategy:
         self.running: bool = False
         self.task: asyncio.Task | None = None
 
-    def run(self, march: bool = False, night_battle: bool = False):
+    def run(self):
         """Start the strategy by creating an async task"""
         self.running = True
         self.capture.start()
-        self.task = asyncio.create_task(self._run(march=march, night_battle=night_battle))
+        self.task = asyncio.create_task(self._run())
 
     def stop(self):
         """Stop the strategy and cancel the async task"""
@@ -28,28 +29,33 @@ class Strategy:
             self.task.cancel()
             self.task = None
 
-    async def _run(self, march: bool = False, night_battle: bool = False) -> None:
+    async def _run(self) -> None:
         """Main strategy loop: continuously search for templates and perform actions"""
         try:
             # Base templates
-            templates = [
+            base_templates = [
                 'combat/compass.png',
                 "combat/line_ahead.png",
                 'common/next.png',
                 'common/return.png',
             ]
 
-            # Optional templates
-            if march:
-                templates.append("combat/advance.png")
-
-            if night_battle:
-                templates.append("combat/engage_night_battle.png")
-            else:
-                templates.append("combat/skip_night_battle.png")
-
             # Main loop: keep searching and clicking templates
             while self.running:
+                templates = base_templates.copy()
+
+                match config.settings.advance:
+                    case config.TriState.ENABLED:
+                        templates.append("combat/advance.png")
+                    case config.TriState.DISABLED:
+                        templates.append("combat/retreat.png")
+
+                match config.settings.night_battle:
+                    case config.TriState.ENABLED:
+                        templates.append("combat/engage_night_battle.png")
+                    case config.TriState.DISABLED:
+                        templates.append("combat/skip_night_battle.png")
+
                 self._click_first_template_path(templates)
                 await asyncio.sleep(TEMPLATE_SEARCH_INTERVAL)
         except asyncio.CancelledError:

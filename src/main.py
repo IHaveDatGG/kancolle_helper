@@ -7,12 +7,12 @@ from window_capture import WindowCapture
 def main():
     strategy: Strategy | None = None
 
-    def run_strategy(title: str, march: bool = False, night_battle: bool = False):
+    def run_strategy(title: str):
         nonlocal strategy
         wc = WindowCapture(title)
         bg_mouse = BackgroundMouse(title)
         strategy = Strategy(wc, bg_mouse)
-        strategy.run(march, night_battle)
+        strategy.run()
 
     def stop_strategy():
         if strategy:

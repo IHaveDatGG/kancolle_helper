@@ -159,11 +159,7 @@ class UI:
         self.page.update()
 
         # Call external strategy function
-        self.run_strategy(
-            self.window_title_input.value,
-            self.march_option.value,
-            self.night_battle_option.value
-        )
+        self.run_strategy(self.window_title_input.value)
 
         # Background gradient animation
         i = 0
