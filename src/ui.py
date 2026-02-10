@@ -39,6 +39,12 @@ class UI:
         self.stop_strategy = None
 
         # Toolbar
+        self.always_on_top_button = ft.IconButton(
+            icon=ft.Icons.PUSH_PIN_OUTLINED,
+            icon_color="white",
+            tooltip="Unpinned",
+            on_click=self._toggle_always_on_top
+        )
         self.capture_mode_button = ft.IconButton(
             icon=ft.icons.Icons.PHOTO_CAMERA_BACK,
             icon_color="yellow",
@@ -47,6 +53,7 @@ class UI:
         )
         self.toolbar = ft.Row(
             controls=[
+                self.always_on_top_button,
                 self.capture_mode_button
             ],
             alignment=ft.MainAxisAlignment.END
@@ -123,6 +130,18 @@ class UI:
                 self.toolbar,
             ], expand=True)
         )
+
+    def _toggle_always_on_top(self) -> None:
+        """Toggle the 'always on top' state of the application window."""
+        self.page.window.always_on_top = not self.page.window.always_on_top
+        if self.page.window.always_on_top:
+            self.always_on_top_button.icon = ft.Icons.PUSH_PIN
+            self.always_on_top_button.icon_color = "red"
+            self.always_on_top_button.tooltip = "Pinned"
+        else:
+            self.always_on_top_button.icon = ft.Icons.PUSH_PIN_OUTLINED
+            self.always_on_top_button.icon_color = "white"
+            self.always_on_top_button.tooltip = "Unpinned"
 
     def _toggle_capture_mode(self) -> None:
         """Toggle the current capture mode between SINGLE and CONTINUOUS."""
